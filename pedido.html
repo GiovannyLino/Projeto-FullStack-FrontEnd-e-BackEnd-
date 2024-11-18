@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizzaria CAP'S</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Pizzaria CAP'S</h1>
+
+        <!-- Formulário para Adicionar/Editar Pedido -->
+        <div class="card mb-4">
+            <div class="card-header">Pedido</div>
+            <div class="card-body">
+                <form id="pedidoForm">
+                    <!-- Seletor de Borda do Pedido -->
+                    <div class="form-group">
+                        <label for="borda">Borda:</label>
+                        <select id="borda" class="form-control" onchange="calcularTotal()">
+                            <option value="2.00">Tradicional - R$2,00</option>
+                            <option value="3.00">Alho frito - R$3,00</option>
+                            <option value="4.00">Cheddar - R$4,00</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Seletor de Tamanho do Pedido -->
+                    <div class="form-group">
+                        <label for="tamanho">Tamanho:</label>
+                        <select id="tamanho" class="form-control" onchange="calcularTotal()">
+                            <option value="10.00">Pequena - R$10,00</option>
+                            <option value="15.00">Média - R$15,00</option>
+                            <option value="20.00">Grande - R$20,00</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Seletor de Sabor 1 do Pedido -->
+                    <div class="form-group">
+                        <label for="sabor1">Sabor 1:</label>
+                        <select id="sabor1" class="form-control" onchange="calcularTotal()">
+                            <option value="5.00">Calabresa - R$5,00</option>
+                            <option value="6.00">Mussarela - R$6,00</option>
+                            <option value="7.00">Frango - R$7,00</option>
+                            <option value="8.00">Portuguesa - R$8,00</option>
+                            <option value="9.00">Marguerita - R$9,00</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Seletor de Sabor 2 do Pedido (opcional) -->
+                    <div class="form-group">
+                        <label for="sabor2">Sabor 2 (opcional):</label>
+                        <select id="sabor2" class="form-control" onchange="calcularTotal()">
+                            <option value="0">Nenhum</option>
+                            <option value="5.00">Calabresa - R$5,00</option>
+                            <option value="6.00">Mussarela - R$6,00</option>
+                            <option value="7.00">Frango - R$7,00</option>
+                            <option value="8.00">Portuguesa - R$8,00</option>
+                            <option value="9.00">Marguerita - R$9,00</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Seletor de Bebida do Pedido -->
+                    <div class="form-group">
+                        <label for="bebida">Bebida:</label>
+                        <select id="bebida" class="form-control" onchange="calcularTotal()">
+                            <option value="0">Nenhum</option>
+                            <option value="5.00">Refrigerante - R$5,00</option>
+                            <option value="3.00">Suco - R$3,00</option>
+                        </select>
+                    </div>
+
+                    <!-- Campo para mostrar o total calculado do pedido -->
+                    <div class="form-group">
+                        <label for="total">Total:</label>
+                        <input type="text" id="total" class="form-control" readonly>
+                    </div>
+                    
+                    <!-- Botão para finalizar o pedido ou salvar alterações -->
+                    <button type="button" id="botaoSalvar" onclick="adicionarOuAtualizarPedido()" class="btn btn-primary">Finalizar Pedido</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabela que exibe todos os pedidos -->
+        <h2>Lista de Pedidos</h2>
+        <table id="pedidoTable" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Borda</th><th>Tamanho</th><th>Sabor 1</th><th>Sabor 2</th><th>Bebida</th><th>Total</th><th>Ações</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        let pedidoEditando = null;  // Variável para controlar quando um pedido está sendo editado
+
+        // Função para carregar todos os pedidos e preencher a tabela
+        async function carregarPedidos() {
+            const res = await fetch('http://localhost:3000/api/pedidos');  // Faz a requisição para pegar todos os pedidos
+            const pedidos = await res.json();  // Converte a resposta em JSON
+            const tabela = document.getElementById("pedidoTable").getElementsByTagName("tbody")[0];
+            tabela.innerHTML = '';  // Limpa a tabela antes de adicionar os pedidos
+            pedidos.forEach(pedido => {
+                // Preenche a tabela com os dados dos pedidos
+                const linha = tabela.insertRow();
+                linha.innerHTML = `<td>${pedido.id}</td><td>${pedido.borda}</td><td>${pedido.tamanho}</td><td>${pedido.sabor1}</td>
+                                   <td>${pedido.sabor2 || ''}</td><td>${pedido.bebida || ''}</td><td>${pedido.total}</td>
+                                   <td>
+                                       <button class="btn btn-warning btn-sm" onclick="editarPedido(${pedido.id})">Editar</button>
+                                       <button class="btn btn-danger btn-sm" onclick="excluirPedido(${pedido.id})">Excluir</button>
+                                   </td>`;  // Adiciona os botões de editar e excluir para cada pedido
+            });
+        }
+
+        // Função para calcular o total do pedido com base nos valores selecionados
+        function calcularTotal() {
+            const borda = parseFloat(document.getElementById("borda").value);  // Obtém o valor da borda
+            const tamanho = parseFloat(document.getElementById("tamanho").value);  // Obtém o valor do tamanho
+            const sabor1 = parseFloat(document.getElementById("sabor1").value);  // Obtém o valor do sabor 1
+            const sabor2 = parseFloat(document.getElementById("sabor2").value) || 0;  // Obtém o valor do sabor 2 (caso seja 0)
+            const bebida = parseFloat(document.getElementById("bebida").value) || 0;  // Obtém o valor da bebida (caso seja 0)
+            const total = borda + tamanho + sabor1 + sabor2 + bebida;  // Soma todos os valores para calcular o total
+            document.getElementById("total").value = total.toFixed(2);  // Exibe o total calculado no campo "Total"
+        }
+
+        // Função para adicionar ou atualizar um pedido
+        async function adicionarOuAtualizarPedido() {
+            const pedido = {
+                borda: document.getElementById("borda").selectedOptions[0].text,
+                tamanho: document.getElementById("tamanho").selectedOptions[0].text,
+                sabor1: document.getElementById("sabor1").selectedOptions[0].text,
+                sabor2: document.getElementById("sabor2").selectedOptions[0].text,
+                bebida: document.getElementById("bebida").selectedOptions[0].text,
+                total: parseFloat(document.getElementById("total").value)
+            };
+
+            // Verifica se estamos editando um pedido ou adicionando um novo
+            if (pedidoEditando) {
+                // Se estamos editando, faz a requisição PUT para atualizar o pedido
+                await fetch(`http://localhost:3000/api/pedidos/${pedidoEditando}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pedido)
+                });
+                pedidoEditando = null;  // Limpa a variável de edição
+                document.getElementById("botaoSalvar").innerText = "Finalizar Pedido";  // Restaura o texto do botão
+            } else {
+                // Se estamos adicionando um novo pedido, faz a requisição POST para criar o pedido
+                await fetch('http://localhost:3000/api/pedidos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pedido)
+                });
+            }
+
+            carregarPedidos();  // Atualiza a tabela com os pedidos
+            document.getElementById("pedidoForm").reset();  // Limpa o formulário
+            document.getElementById("total").value = '';  // Limpa o campo do total
+        }
+
+        // Função para editar um pedido
+        async function editarPedido(id) {
+            const res = await fetch(`http://localhost:3000/api/pedidos`);  // Faz a requisição para pegar todos os pedidos
+            const pedidos = await res.json();  // Converte a resposta em JSON
+            const pedido = pedidos.find(p => p.id === id);  // Encontra o pedido com o id especificado
+            if (pedido) {
+                pedidoEditando = id;  // Marca que estamos editando esse pedido
+                // Preenche os campos do formulário com os dados do pedido
+                document.getElementById("borda").value = pedido.borda;
+                document.getElementById("tamanho").value = pedido.tamanho;
+                document.getElementById("sabor1").value = pedido.sabor1;
+                document.getElementById("sabor2").value = pedido.sabor2 || 0;
+                document.getElementById("bebida").value = pedido.bebida || 0;
+                document.getElementById("total").value = pedido.total;
+                document.getElementById("botaoSalvar").innerText = "Salvar Pedido";  // Altera o texto do botão para "Salvar Pedido"
+            }
+        }
+
+        // Função para excluir um pedido
+        async function excluirPedido(id) {
+            if (confirm("Deseja realmente excluir este pedido?")) {  // Confirma a exclusão
+                await fetch(`http://localhost:3000/api/pedidos/${id}`, { method: 'DELETE' });  // Faz a requisição DELETE
+                carregarPedidos();  // Atualiza a tabela com os pedidos restantes
+            }
+        }
+
+        // Carrega os pedidos ao iniciar a página
+        carregarPedidos();
+    </script>
+</body>
+</html>
