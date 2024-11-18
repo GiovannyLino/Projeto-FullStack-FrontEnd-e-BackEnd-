@@ -13,10 +13,10 @@ app.use(bodyParser.json()); // Permite que o servidor entenda JSON no corpo das 
 
 // Configuração de conexão ao banco de dados MySQL
 const db = mysql.createConnection({
-    host: '127.0.0.1', // Endereço do servidor MySQL (localhost)
-    user: 'root', // Nome do usuário para autenticação no banco de dados
-    password: '1234', // Senha do usuário (substitua pela sua senha real)
-    database: 'pizzaria' // Nome do banco de dados (substitua pelo nome do seu banco)
+    host: 'localhost', // Endereço do servidor MySQL (localhost)
+    user: 'user_root', // Nome do usuário para autenticação no banco de dados
+    password: 'senha', // Senha do usuário (substitua pela sua senha real)
+    database: 'NomeDB' // Nome do banco de dados (substitua pelo nome do seu banco)
 });
 
 // Tentativa de conexão com o banco de dados
